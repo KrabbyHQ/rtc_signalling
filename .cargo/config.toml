@@ -1,0 +1,5 @@
+[alias]
+# dev="watch -q -c -w src/ -x run" # watching for only file within "./src'
+# dev="watch --poll -q -c -x run" # for wsl support: when working with a project that is within the windows file system (as in "...mtn/c/...")
+dev="watch -c -w src -w config -x run"
+# dev="watch --poll -c -w src -w config -x run" # use this if on WSL and reload doesn't trigger
