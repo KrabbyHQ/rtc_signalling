@@ -1,0 +1,27 @@
+[package]
+name = "rtc_signalling"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Core RTC signalling server for Krabby audio/video call implementations"
+license = "MIT"
+
+[dependencies]
+anyhow = "1.0.102"
+axum = "0.8.8"
+chrono = { version = "0.4.44", features = ["serde", "clock"] }
+config = "0.15.19"
+dotenvy = "0.15.7"
+jsonwebtoken = { version = "10.3.0", features = ["rust_crypto"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+thiserror = "2.0.18"
+tokio = { version = "1.49.0", features = ["full"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["fmt", "json", "time"] }
+uuid = { version = "1.21.0", features = ["v4"] }
+
+[dev-dependencies]
+axum-test = "18.7.0"
+serial_test = "3.4.0"
+tokio = { version = "1.49.0", features = ["full", "macros"] }
