@@ -9,3 +9,13 @@ pub fn load_env() {
 
     dotenvy::from_filename(&filename).ok();
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_load_env_does_not_panic() {
+        load_env();
+    }
+}

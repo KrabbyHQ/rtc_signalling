@@ -100,3 +100,151 @@ impl AppConfig {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serial_test::serial;
+
+    fn valid_app_section() -> AppSection {
+        AppSection {
+            name: "Test App".to_string(),
+            environment: Some("development".to_string()),
+        }
+    }
+
+    fn valid_server_section() -> ServerSection {
+        ServerSection {
+            host: "127.0.0.1".to_string(),
+            port: 8080,
+            request_timeout_secs: 30,
+        }
+    }
+
+    #[test]
+    fn test_validate_valid_config() {
+        let config = AppConfig {
+            app: valid_app_section(),
+            client_integrations: ClientIntegrationsSection {
+                allow_logging_middleware: true,
+                allow_request_timeout_middleware: true,
+            },
+            observability: ObservabilitySection {
+                enable_tracing: true,
+                enable_metrics: true,
+            },
+            server: Some(valid_server_section()),
+        };
+
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn test_validate_missing_app_name() {
+        let mut config = AppConfig {
+            app: valid_app_section(),
+            client_integrations: ClientIntegrationsSection {
+                allow_logging_middleware: false,
+                allow_request_timeout_middleware: false,
+            },
+            observability: ObservabilitySection {
+                enable_tracing: false,
+                enable_metrics: false,
+            },
+            server: Some(valid_server_section()),
+        };
+        config.app.name = "".to_string();
+
+        let result = config.validate();
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "app.name cannot be empty");
+    }
+
+    #[test]
+    fn test_validate_invalid_port() {
+        let config = AppConfig {
+            app: valid_app_section(),
+            client_integrations: ClientIntegrationsSection {
+                allow_logging_middleware: false,
+                allow_request_timeout_middleware: false,
+            },
+            observability: ObservabilitySection {
+                enable_tracing: false,
+                enable_metrics: false,
+            },
+            server: Some(ServerSection {
+                host: "127.0.0.1".to_string(),
+                port: 0,
+                request_timeout_secs: 60,
+            }),
+        };
+
+        let result = config.validate();
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "server.port cannot be 0");
+    }
+
+    #[test]
+    fn test_validate_missing_server_section() {
+        let config = AppConfig {
+            app: valid_app_section(),
+            client_integrations: ClientIntegrationsSection {
+                allow_logging_middleware: false,
+                allow_request_timeout_middleware: false,
+            },
+            observability: ObservabilitySection {
+                enable_tracing: false,
+                enable_metrics: false,
+            },
+            server: None,
+        };
+
+        let result = config.validate();
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err().to_string(), "server section is missing");
+    }
+
+    #[test]
+    #[serial]
+    fn test_load_config_functional() {
+        // Ensure APP__ENV is set for the test
+        // SAFETY: This is a test environment and we are setting environment variables
+        // for the duration of the test. In a multi-threaded test environment,
+        // this could still be racey, but it's required for the test logic.
+        unsafe { std::env::set_var("APP__ENV", "development") };
+
+        let config_result = load_config();
+        assert!(
+            config_result.is_ok(),
+            "Failed to load config: {:?}",
+            config_result.err()
+        );
+
+        let config = config_result.unwrap();
+        assert_eq!(config.app.name, "rtc-signalling");
+        assert_eq!(config.app.environment.as_deref(), Some("development"));
+    }
+
+    #[test]
+    #[serial]
+    fn test_load_config_env_overrides() {
+        // SAFETY: Setting environment variables for test overrides.
+        unsafe {
+            std::env::set_var("APP__ENV", "development");
+            std::env::set_var("APP__SERVER__PORT", "1234");
+            std::env::set_var("APP__APP__NAME", "env-override-test");
+        }
+
+        let config = load_config().expect("Failed to load config");
+
+        assert_eq!(config.server.unwrap().port, 1234);
+        assert_eq!(config.app.name, "env-override-test");
+
+        // Clean up
+        // SAFETY: Removing environment variables used in the test.
+        unsafe {
+            std::env::remove_var("APP__SERVER__PORT");
+            std::env::remove_var("APP__APP__NAME");
+        }
+    }
+}

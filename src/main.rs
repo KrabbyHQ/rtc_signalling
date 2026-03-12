@@ -5,7 +5,7 @@ use rtc_signalling::utils::load_env::load_env;
 use rtc_signalling::{AppState, create_app};
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tracing::{error};
+use tracing::error;
 use tracing_subscriber::fmt::time::SystemTime;
 
 fn initialize_logging() {
@@ -39,14 +39,21 @@ async fn main() {
         config: Arc::new(app_config),
     };
 
-    let host = state.config.server.as_ref().map(|s| s.host.as_str()).unwrap_or("127.0.0.1");
+    let host = state
+        .config
+        .server
+        .as_ref()
+        .map(|s| s.host.as_str())
+        .unwrap_or("127.0.0.1");
     let port = state.config.server.as_ref().map(|s| s.port).unwrap_or(8081);
 
     let addr: SocketAddr = format!("{}:{}", host, port)
         .parse()
         .expect("Invalid server address");
 
-    let listener = tokio::net::TcpListener::bind(addr).await.expect("Failed to bind to address");
+    let listener = tokio::net::TcpListener::bind(addr)
+        .await
+        .expect("Failed to bind to address");
 
     print!(
         "
