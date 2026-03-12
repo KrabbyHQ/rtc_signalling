@@ -1,0 +1,8 @@
+[app]
+environment = "development"
+
+[server]
+port = 8081
+
+[observability]
+enable_tracing = true
